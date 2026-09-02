@@ -1,0 +1,16 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@nestjs|@prisma))"
+  ],
+  "moduleNameMapper": {
+    "^../generated/prisma/client$": "<rootDir>/../test/mock-prisma-client.ts",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  }
+}
