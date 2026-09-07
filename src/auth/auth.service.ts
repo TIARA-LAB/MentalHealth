@@ -33,6 +33,7 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         name: dto.name,
+        profile: { create: {} },
       },
     });
 
@@ -141,8 +142,21 @@ export class AuthService {
   }
 
   private async storeRefreshToken(userId: string, refreshToken: string) {
+    const expiresIn = this.config.getOrThrow<string>('JWT_REFRESH_EXPIRATION');
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const match = /^(\d+)([smhd])$/.exec(expiresIn);
+    if (match) {
+      const value = parseInt(match[1], 10);
+      const unit = match[2];
+      if (unit === 's') expiresAt.setSeconds(expiresAt.getSeconds() + value);
+      else if (unit === 'm')
+        expiresAt.setMinutes(expiresAt.getMinutes() + value);
+      else if (unit === 'h') expiresAt.setHours(expiresAt.getHours() + value);
+      else if (unit === 'd') expiresAt.setDate(expiresAt.getDate() + value);
+    } else {
+      expiresAt.setDate(expiresAt.getDate() + 7);
+    }
 
     const hashed = await hash(refreshToken);
     await this.prisma.refreshToken.create({

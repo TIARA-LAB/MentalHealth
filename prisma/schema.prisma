@@ -7,6 +7,14 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Mood {
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -17,6 +25,49 @@ model User {
   deletedAt DateTime?
 
   refreshTokens RefreshToken[]
+  profile      Profile?
+  checkIns     CheckIn[]
+  journals     Journal[]
+}
+
+model Profile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  bio          String?
+  avatarUrl    String?
+  streakCount  Int       @default(0)
+  lastCheckInAt DateTime?
+  preferences  Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CheckIn {
+  id        String   @id @default(uuid())
+  userId    String
+  mood      Mood
+  notes     String?
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Journal {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String
+  mood      Mood?
+  tags      String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RefreshToken {

@@ -7,10 +7,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -38,6 +42,8 @@ export class UsersController {
       },
     },
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Get('me')
   getMe(@CurrentUser('id') userId: string) {
     return this.usersService.getMe(userId);
@@ -56,6 +62,10 @@ export class UsersController {
       },
     },
   })
+  @ApiBadRequestResponse({ description: 'Invalid body (e.g. malformed email)' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
+  @ApiConflictResponse({ description: 'Email already in use' })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Patch('me')
   updateMe(@CurrentUser('id') userId: string, @Body() dto: UpdateUserDto) {
     return this.usersService.updateMe(userId, dto);
@@ -66,6 +76,14 @@ export class UsersController {
     description: 'Password changed',
     schema: { example: { message: 'Password changed successfully' } },
   })
+  @ApiBadRequestResponse({ description: 'Invalid body (short new password)' })
+  @ApiUnauthorizedResponse({
+    description: 'Missing/invalid access token or incorrect current password',
+  })
+  @ApiConflictResponse({
+    description: 'New password is the same as the current password',
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Patch('me/password')
   changePassword(
     @CurrentUser('id') userId: string,
@@ -79,6 +97,8 @@ export class UsersController {
     description: 'Account soft-deleted',
     schema: { example: { message: 'Account deleted successfully' } },
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Delete('me')
   softDelete(@CurrentUser('id') userId: string) {
     return this.usersService.softDelete(userId);

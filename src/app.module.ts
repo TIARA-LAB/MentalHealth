@@ -5,6 +5,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ProfileModule } from './profile/profile.module';
+import { CheckInsModule } from './check-ins/check-ins.module';
+import { JournalModule } from './journal/journal.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    ProfileModule,
+    CheckInsModule,
+    JournalModule,
   ],
   providers: [
     {

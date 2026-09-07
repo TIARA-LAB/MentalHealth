@@ -1,10 +1,14 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -30,6 +34,10 @@ export class AuthController {
       },
     },
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid body (bad email / short password)',
+  })
+  @ApiConflictResponse({ description: 'Email already registered' })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -46,6 +54,8 @@ export class AuthController {
       },
     },
   })
+  @ApiBadRequestResponse({ description: 'Invalid body' })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -61,6 +71,13 @@ export class AuthController {
         refreshToken: 'jwt-refresh-token',
       },
     },
+  })
+  @ApiBadRequestResponse({ description: 'Missing/invalid refreshToken body' })
+  @ApiUnauthorizedResponse({
+    description: 'Refresh token is invalid, expired, or the user was deleted',
+  })
+  @ApiForbiddenResponse({
+    description: 'Refresh token is not stored, already rotated, or revoked',
   })
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh')
@@ -79,6 +96,7 @@ export class AuthController {
     description: 'Logged out successfully',
     schema: { example: { message: 'Logged out successfully' } },
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@CurrentUser('id') userId: string) {

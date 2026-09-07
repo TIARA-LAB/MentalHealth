@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -14,7 +15,7 @@ export class UsersService {
 
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -30,9 +31,20 @@ export class UsersService {
   }
 
   async updateMe(userId: string, dto: UpdateUserDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (dto.email !== undefined && dto.email !== user.email) {
+      const existing = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (existing && existing.deletedAt === null) {
+        throw new ConflictException('Email already in use');
+      }
     }
 
     const updated = await this.prisma.user.update({
@@ -53,7 +65,9 @@ export class UsersService {
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -63,17 +77,31 @@ export class UsersService {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
+    if (dto.currentPassword === dto.newPassword) {
+      throw new ConflictException(
+        'New password must be different from the current password',
+      );
+    }
+
     const hashed = await hash(dto.newPassword);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { password: hashed },
-    });
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revoked: false },
+        data: { revoked: true },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { password: hashed },
+      }),
+    ]);
 
     return { message: 'Password changed successfully' };
   }
 
   async softDelete(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }

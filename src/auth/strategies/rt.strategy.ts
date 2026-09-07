@@ -9,6 +9,25 @@ export type RefreshTokenPayload = {
   rt: string;
 };
 
+const extractJwtFromBody = (req: {
+  body?: { refreshToken?: string };
+}): string | null => {
+  return req?.body?.refreshToken ?? null;
+};
+
+export type RequestWithBody = {
+  headers?: { authorization?: string };
+  body?: { refreshToken?: string };
+};
+
+const extractRefreshToken = (req: RequestWithBody): string | null => {
+  const headerToken = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  if (headerToken) {
+    return headerToken;
+  }
+  return extractJwtFromBody(req);
+};
+
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
@@ -16,7 +35,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
 ) {
   constructor(configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: extractRefreshToken,
       secretOrKey: configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       ignoreExpiration: false,
     });
