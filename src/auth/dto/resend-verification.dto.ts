@@ -2,18 +2,10 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
-export class UpdateUserDto {
+export class ResendVerificationDto {
   @ApiPropertyOptional({
-    example: 'Jane Doe',
-    description: 'Updated display name',
-  })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional({
-    example: 'new.email@example.com',
-    description: 'Updated email',
+    example: 'jane.doe@example.com',
+    description: 'Email to resend the verification code to',
   })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
@@ -21,4 +13,12 @@ export class UpdateUserDto {
   )
   @IsEmail()
   email?: string;
+
+  @ApiPropertyOptional({
+    example: '+15551234567',
+    description: 'Phone number to resend the verification code to',
+  })
+  @IsOptional()
+  @IsString()
+  phone?: string;
 }

@@ -1,19 +1,10 @@
 {
   "info": {
-    "_postman_id": "7f6c4a1e-9b2d-4e5f-8a3c-1d2e3f4a5b6c",
     "name": "Mental Health API",
-    "description": "REST API for the Mental Health platform.\n\nBase URL: `{{baseUrl}}`\n\n## Authentication\n\n- `Register` and `Login` return an `accessToken` (JWT) and a `refreshToken`.\n- The `accessToken` must be sent as a `Bearer` token in the `Authorization` header for protected routes (auto-applied to the whole collection). `Login`, `Register`, and `Refresh Tokens` opt out of the automatic header.\n- The `refreshToken` is sent in the **request body** of the `POST /auth/refresh` endpoint. Do **not** send the `accessToken` in the `Authorization` header on the refresh call — the refresh strategy validates any Bearer header against the *refresh* secret, so the access token there would cause a 401.\n- An automated Postman script saves both tokens into the collection variables `accessToken` and `refreshToken` after Register/Login/Refresh.\n\n## Workflow order\n\n1. `Register` (or `Login`)\n2. `User` and `Profile` endpoints (get/update profile, update settings) require an access token\n3. `Check-ins` (get history / create a daily check-in — kept unique per day, drives the streak)\n4. `Journal` (list / create entries)\n5. `Refresh Tokens` (rotate tokens) / `Logout` (revoke refresh tokens)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{accessToken}}",
-        "type": "string"
-      }
-    ]
+    "description": "REST API for the Mental Health platform. Includes Journal, Check-ins, Profile, and Auth endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "1",
+    "_postman_id": "mental-health-api-collection"
   },
   "variable": [
     {
@@ -30,37 +21,39 @@
       "key": "refreshToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "journalEntryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkInId",
+      "value": "",
+      "type": "string"
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
       "name": "Auth",
       "item": [
         {
           "name": "Register",
-          "auth": {
-            "type": "noauth"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Response has accessToken and refreshToken', () => {",
-                  "  pm.expect(json).to.have.property('accessToken');",
-                  "  pm.expect(json).to.have.property('refreshToken');",
-                  "  pm.expect(json.user).to.have.property('id');",
-                  "  pm.expect(json.user).to.have.property('email');",
-                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -69,96 +62,38 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Jane Doe\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             },
-            "description": "Creates a new user and returns the user profile along with an access token and refresh token."
-          },
-          "response": []
-        },
-        {
-          "name": "Login",
-          "auth": {
-            "type": "noauth"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Response has accessToken and refreshToken', () => {",
-                  "  pm.expect(json).to.have.property('accessToken');",
-                  "  pm.expect(json).to.have.property('refreshToken');",
-                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Authenticates a user with email and password and returns an access token and refresh token."
-          },
-          "response": []
-        },
-        {
-          "name": "Refresh Tokens",
-          "auth": {
-            "type": "noauth"
+            }
           },
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "const json = pm.response.json();",
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('New token pair returned and saved', () => {",
-                  "  pm.expect(json).to.have.property('accessToken');",
-                  "  pm.expect(json).to.have.property('refreshToken');",
-                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
-                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
-                  "});"
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Response has accessToken', function () { var json = pm.response.json(); pm.expect(json.accessToken).to.exist; });",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);"
                 ],
                 "type": "text/javascript"
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Login",
           "request": {
             "method": "POST",
             "header": [
@@ -167,6 +102,51 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has accessToken', function () { var json = pm.response.json(); pm.expect(json.accessToken).to.exist; });",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
@@ -175,371 +155,47 @@
                   "language": "json"
                 }
               }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
-            },
-            "description": "Exchanges a valid, non-revoked refresh token for a new access token / refresh token pair (rotation — the old token is revoked). The refresh token is sent in the **request body**. This request disables the automatic Bearer header: the refresh strategy validates any Authorization header token against the refresh secret, so the access token must not be sent here (it would cause a 401)."
+            }
           },
-          "response": []
-        },
-        {
-          "name": "Logout",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Logout message returned', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json.message).to.eql('Logged out successfully');",
-                  "});"
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response has new accessToken', function () { var json = pm.response.json(); pm.expect(json.accessToken).to.exist; });",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
                 ],
                 "type": "text/javascript"
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            },
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "logout"]
             },
-            "description": "Revokes all active refresh tokens for the authenticated user. Requires a valid Bearer access token (auto-applied from the `accessToken` collection variable)."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Users",
-      "item": [
-        {
-          "name": "Get My Profile",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Profile returned', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('id');",
-                  "  pm.expect(json).to.have.property('email');",
-                  "  pm.test('Password is not exposed', () => pm.expect(json).to.not.have.property('password'));",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
-            },
-            "description": "Returns the authenticated user's profile. Requires a valid Bearer access token."
-          },
-          "response": []
-        },
-        {
-          "name": "Update My Profile",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Profile updated', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('name');",
-                  "  pm.expect(json).to.have.property('email');",
-                  "  pm.test('Password is not exposed', () => pm.expect(json).to.not.have.property('password'));",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\"\n}",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
-            },
-            "description": "Updates the authenticated user's name and/or email. Requires a valid Bearer access token. Returns 409 Conflict if the email is already in use, and 400 if the email is not a valid email address."
-          },
-          "response": []
-        },
-        {
-          "name": "Change My Password",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Success message returned', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json.message).to.eql('Password changed successfully');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newPassword123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/me/password",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me", "password"]
-            },
-            "description": "Changes the authenticated user's password. Requires a valid Bearer access token. Returns 401 if the current password is incorrect, and 409 if the new password is the same as the current one. All of the user's refresh tokens are revoked after a successful change."
-          },
-          "response": []
-        },
-        {
-          "name": "Delete My Account",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Deletion message returned', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json.message).to.eql('Account deleted successfully');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
-            },
-            "description": "Soft-deletes the authenticated user's account and revokes all their refresh tokens. Requires a valid Bearer access token."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Profile",
-      "item": [
-        {
-          "name": "Get My Profile",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Profile and streak details returned', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('id');",
-                  "  pm.expect(json).to.have.property('email');",
-                  "  pm.expect(json).to.have.property('profile');",
-                  "  pm.expect(json.profile).to.have.property('streakCount');",
-                  "  pm.test('Password is not exposed', () => pm.expect(json).to.not.have.property('password'));",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile"]
-            },
-            "description": "Returns the authenticated user's profile including streak details (streakCount, lastCheckInAt, preferences). Requires a valid Bearer access token."
-          },
-          "response": []
-        },
-        {
-          "name": "Update Profile Settings",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Profile settings updated', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('profile');",
-                  "  pm.expect(json.profile.bio).to.eql('A short bio about me');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"bio\": \"A short bio about me\",\n  \"avatarUrl\": \"https://example.com/avatar.png\",\n  \"preferences\": {\n    \"theme\": \"dark\",\n    \"notificationsEnabled\": true\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/profile/settings",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "settings"]
-            },
-            "description": "Updates the authenticated user's profile settings (bio, avatarUrl, preferences — all optional). Requires a valid Bearer access token."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Check-ins",
-      "item": [
-        {
-          "name": "Get Check-in History",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns an array of check-ins', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.be.an('array');",
-                  "  if (json.length > 0) {",
-                  "    pm.expect(json[0]).to.have.property('mood');",
-                  "    pm.expect(json[0]).to.have.property('date');",
-                  "  }",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/check-ins",
-              "host": ["{{baseUrl}}"],
-              "path": ["check-ins"]
-            },
-            "description": "Returns all check-in history records for the authenticated user, ordered by date descending. Requires a valid Bearer access token."
-          },
-          "response": []
-        },
-        {
-          "name": "Create Check-in",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Check-in created', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('mood');",
-                  "  pm.expect(json).to.have.property('date');",
-                  "  pm.expect(json).to.have.property('id');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"mood\": \"THREE\",\n  \"notes\": \"Felt productive and calm today\",\n  \"date\": \"2026-09-07\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/check-ins",
-              "host": ["{{baseUrl}}"],
-              "path": ["check-ins"]
-            },
-            "description": "Submits a new daily check-in. `mood` is one of `ONE`..`FIVE` and is required; `notes` and `date` (ISO, defaults to today UTC) are optional. One check-in per day — returns 409 Conflict on a duplicate date. Successfully checking in updates the profile streak."
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -547,57 +203,22 @@
       "name": "Journal",
       "item": [
         {
-          "name": "Get Journal Entries",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Returns an array of entries', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.be.an('array');",
-                  "  if (json.length > 0) {",
-                  "    pm.expect(json[0]).to.have.property('title');",
-                  "    pm.expect(json[0]).to.have.property('content');",
-                  "  }",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "List Journal Entries",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/journal",
+              "raw": "{{baseUrl}}/journal?limit=20&includeArchived=false",
               "host": ["{{baseUrl}}"],
-              "path": ["journal"]
-            },
-            "description": "Returns all journal entries written by the authenticated user, ordered by createdAt descending. Requires a valid Bearer access token."
-          },
-          "response": []
+              "path": ["journal"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "includeArchived", "value": "false" }
+              ]
+            }
+          }
         },
         {
           "name": "Create Journal Entry",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Entry created', () => {",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json).to.have.property('title');",
-                  "  pm.expect(json).to.have.property('content');",
-                  "  pm.expect(json).to.have.property('id');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -606,25 +227,413 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Morning reflections\",\n  \"content\": \"Today I felt calm and focused.\",\n  \"mood\": \"FOUR\",\n  \"tags\": [\"reflection\", \"work\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/journal",
               "host": ["{{baseUrl}}"],
               "path": ["journal"]
             },
-            "description": "Creates a new journal entry. `title` and `content` are required; `mood` (ONE..FIVE) and `tags` (max 10, each max 30 chars) are optional. Requires a valid Bearer access token."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning Reflections\",\n  \"content\": \"Today I felt calm and focused. The meditation session helped clear my mind.\",\n  \"mood\": \"FOUR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Response has entry', function () { var json = pm.response.json(); pm.expect(json.id).to.exist; pm.collectionVariables.set('journalEntryId', json.id); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Journal Entries",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/journal/search?q=meditation",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "search"],
+              "query": [
+                { "key": "q", "value": "meditation" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Journal Calendar (Entry Counts)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/journal/calendar?from=2026-09-01&to=2026-09-30",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "calendar"],
+              "query": [
+                { "key": "from", "value": "2026-09-01" },
+                { "key": "to", "value": "2026-09-30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Journal Entry",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Journal Entry (PUT - Replace)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Morning Reflections\",\n  \"content\": \"Updated content with more details about my day.\",\n  \"mood\": \"FIVE\",\n  \"tags\": [\"reflection\", \"meditation\", \"morning\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patch Journal Entry (PATCH - Partial)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mood\": \"THREE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Archive Journal Entry",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Restore Journal Entry",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "Delete Journal Entry",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/journal/{{journalEntryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "{{journalEntryId}}"]
+            }
+          }
         }
       ]
+    },
+    {
+      "name": "Mood Check-ins",
+      "item": [
+        {
+          "name": "List Check-ins",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins?limit=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins"],
+              "query": [
+                { "key": "limit", "value": "30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mood\": \"FOUR\",\n  \"intensity\": 4,\n  \"factors\": [\"sleep\", \"exercise\"],\n  \"emotions\": [\"Grateful\", \"Energetic\"],\n  \"influencers\": [\"Morning run\", \"Good sleep\"],\n  \"notes\": \"Felt great after morning workout and 8 hours of sleep.\",\n  \"date\": \"2026-09-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Response has check-in', function () { var json = pm.response.json(); pm.expect(json.id).to.exist; pm.collectionVariables.set('checkInId', json.id); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Today's Check-in",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "today"]
+            }
+          }
+        },
+        {
+          "name": "Get Latest Check-in",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "latest"]
+            }
+          }
+        },
+        {
+          "name": "Check-in Calendar",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/calendar?from=2026-09-01&to=2026-09-30",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "calendar"],
+              "query": [
+                { "key": "from", "value": "2026-09-01" },
+                { "key": "to", "value": "2026-09-30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Check-in",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/{{checkInId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "{{checkInId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Check-in (PUT - Replace)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/{{checkInId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "{{checkInId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mood\": \"FIVE\",\n  \"intensity\": 5,\n  \"factors\": [\"sleep\", \"exercise\", \"nutrition\"],\n  \"emotions\": [\"Grateful\", \"Energetic\", \"Proud\"],\n  \"influencers\": [\"Morning run\", \"Good sleep\", \"Healthy breakfast\"],\n  \"notes\": \"Updated: Amazing day overall!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patch Check-in (PATCH - Partial)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/{{checkInId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "{{checkInId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intensity\": 3,\n  \"notes\": \"Updated notes only\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Check-in",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/mood-checkins/{{checkInId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood-checkins", "{{checkInId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Has profile with wellnessScore and dayStreak', function () { var json = pm.response.json(); pm.expect(json.profile).to.exist; pm.expect(json.profile.wellnessScore).to.exist; pm.expect(json.profile.dayStreak).to.exist; pm.expect(json.profile.preferences.dailyMoodReminder).to.exist; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "settings"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated bio - mental health advocate\",\n  \"age\": 30,\n  \"gender\": \"female\",\n  \"reminderEnabled\": true,\n  \"reminderTime\": \"20:30\",\n  \"onboardingStep\": 3,\n  \"preferences\": {\n    \"dailyMoodReminder\": true,\n    \"journalReminder\": true,\n    \"streakAlerts\": true,\n    \"reminderTime\": \"20:30\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User (/users/me)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "",
+          "// Auto-set auth header from collection variable",
+          "if (pm.collectionVariables.get('accessToken')) {",
+          "  pm.request.headers.add({ key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('accessToken') });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
     }
   ]
 }

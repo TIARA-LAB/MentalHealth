@@ -20,6 +20,9 @@ export class JournalEntryDto {
   @ApiResponseProperty({ example: ['reflection', 'work'] })
   tags!: string[];
 
+  @ApiResponseProperty({ example: null })
+  archivedAt!: Date | null;
+
   @ApiResponseProperty({ example: '2026-09-07T08:00:00.000Z' })
   createdAt!: Date;
 

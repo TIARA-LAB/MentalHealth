@@ -1,8 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   IsArray,
-  IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
@@ -13,15 +12,16 @@ import {
 } from 'class-validator';
 import { Mood } from '../../generated/prisma/client';
 
-export class CreateCheckInDto {
-  @ApiProperty({
+export class UpdateCheckInDto {
+  @ApiPropertyOptional({
     enum: Mood,
     enumName: 'Mood',
     description: 'How the user is feeling today (1-5)',
     example: Mood.THREE,
   })
+  @IsOptional()
   @IsEnum(Mood)
-  mood!: Mood;
+  mood?: Mood;
 
   @ApiPropertyOptional({
     example: 3,
@@ -78,13 +78,4 @@ export class CreateCheckInDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
-
-  @ApiPropertyOptional({
-    example: '2026-09-07',
-    description:
-      'Date of the check-in in ISO format. Defaults to today (UTC). One check-in per day.',
-  })
-  @IsOptional()
-  @IsDateString()
-  date?: string;
 }

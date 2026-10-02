@@ -1,35 +1,37 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   IsArray,
   IsEnum,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { Mood } from '../../generated/prisma/client';
 
-export class CreateJournalDto {
-  @ApiProperty({
+export class UpdateJournalDto {
+  @ApiPropertyOptional({
     example: 'Morning reflections',
     description: 'Journal entry title',
     maxLength: 200,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
+  @MinLength(1)
   @MaxLength(200)
-  title!: string;
+  title?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Today I felt calm and focused...',
     description: 'Journal entry body',
     maxLength: 20000,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
+  @MinLength(1)
   @MaxLength(20000)
-  content!: string;
+  content?: string;
 
   @ApiPropertyOptional({
     enum: Mood,

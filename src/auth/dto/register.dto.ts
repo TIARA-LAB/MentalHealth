@@ -1,8 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'jane.doe@example.com', description: 'User email' })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
   @IsEmail()
   email!: string;
 
@@ -22,4 +32,13 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiPropertyOptional({
+    example: '+15551234567',
+    description: 'User phone number (can verify later via OTP)',
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\+?[1-9]\d{7,14}$/, { message: 'phone must be a valid number' })
+  phone?: string;
 }

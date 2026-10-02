@@ -33,3 +33,9 @@ src/generated/prisma
 
 # Docker
 docker-compose.override.yml
+
+postman_collection.json
+app.postman_environment.json
+API_DOCUMENTATION.md
+api.postman_environment.json
+

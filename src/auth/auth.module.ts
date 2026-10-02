@@ -6,9 +6,11 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AccessTokenStrategy } from './strategies/at.strategy';
 import { RefreshTokenStrategy } from './strategies/rt.strategy';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
+    UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

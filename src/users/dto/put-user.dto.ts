@@ -2,10 +2,15 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class LoginDto {
+export class PutUserDto {
+  @ApiProperty({ example: 'Jane Doe', description: 'Display name (required)' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
   @ApiPropertyOptional({
     example: 'jane.doe@example.com',
-    description: 'User email (provide email or phone)',
+    description: 'Email address',
   })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
@@ -13,17 +18,4 @@ export class LoginDto {
   )
   @IsEmail()
   email?: string;
-
-  @ApiPropertyOptional({
-    example: '+15551234567',
-    description: 'User phone number (provide email or phone)',
-  })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiProperty({ example: 'password123', description: 'User password' })
-  @IsString()
-  @IsNotEmpty()
-  password!: string;
 }

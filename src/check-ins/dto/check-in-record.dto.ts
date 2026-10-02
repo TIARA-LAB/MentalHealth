@@ -11,6 +11,18 @@ export class CheckInRecordDto {
   @ApiProperty({ enum: Mood, enumName: 'Mood', example: 'THREE' })
   mood!: Mood;
 
+  @ApiResponseProperty({ example: 3 })
+  intensity!: number | null;
+
+  @ApiResponseProperty({ example: ['sleep', 'work'] })
+  factors!: string[];
+
+  @ApiResponseProperty({ example: ['Grateful', 'Anxious'] })
+  emotions!: string[];
+
+  @ApiResponseProperty({ example: ['Work', 'Sleep'] })
+  influencers!: string[];
+
   @ApiResponseProperty({ example: 'Felt productive and calm today' })
   notes!: string | null;
 

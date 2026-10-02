@@ -25,7 +25,8 @@ export class ProfileController {
     summary: 'Get the current authenticated user profile and streak details',
   })
   @ApiOkResponse({
-    description: 'The user profile with streak details',
+    description:
+      'The user profile including streaks, dayStreak, wellnessScore, onboarding fields and notification preferences',
     type: UserProfileDto,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
@@ -37,12 +38,13 @@ export class ProfileController {
 
   @ApiOperation({ summary: 'Update settings for the user profile' })
   @ApiOkResponse({
-    description: 'The updated user profile with streak details',
+    description:
+      'The updated user profile including streaks, wellnessScore, onboarding fields and notification preferences',
     type: UserProfileDto,
   })
   @ApiBadRequestResponse({
     description:
-      'Invalid body (unknown field, oversized bio, non-object preferences)',
+      'Invalid body (unknown field, oversized bio, non-object preferences, invalid gender/age/reminderTime)',
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
   @ApiNotFoundResponse({ description: 'User not found' })

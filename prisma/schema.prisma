@@ -15,19 +15,61 @@ enum Mood {
   FIVE
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+enum OnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
 
-  refreshTokens RefreshToken[]
-  profile      Profile?
-  checkIns     CheckIn[]
-  journals     Journal[]
+enum VerificationType {
+  EMAIL
+  PHONE
+  PASSWORD_RESET
+}
+
+enum ExportStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  FAILED
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  email               String              @unique
+  phone               String?             @unique
+  password            String
+  name                String?
+  emailVerifiedAt     DateTime?
+  phoneVerifiedAt     DateTime?
+  timezone            String?
+  language            String?
+  onboardingStatus    OnboardingStatus    @default(NOT_STARTED)
+  completedOnboardingAt DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+
+  refreshTokens      RefreshToken[]
+  verificationTokens VerificationToken[]
+  profile            Profile?
+  checkIns           CheckIn[]
+  journals           Journal[]
+  wellnessGoal       WellnessGoal?
+  onboardingAnswer   OnboardingAnswer?
+  dataExports        DataExport[]
+  tipFeedback        TipFeedback[]
+  savedRecommendations SavedRecommendation[]
+  completedPrompts   CompletedPrompt[]
+  devices            Device[]
+  notificationSetting NotificationSetting?
+  reminders          Reminder[]
+  notifications      Notification[]
+  consentRecords     ConsentRecord[]
+  supportTickets     SupportTicket[]
+  feedback           Feedback[]
+  bugReports         BugReport[]
 }
 
 model Profile {
@@ -35,9 +77,17 @@ model Profile {
   userId       String    @unique
   bio          String?
   avatarUrl    String?
+  age          Int?
+  gender       String?
   streakCount  Int       @default(0)
   lastCheckInAt DateTime?
+  journalStreakCount Int @default(0)
+  lastJournalAt DateTime?
+  reminderEnabled Boolean @default(false)
+  reminderTime  String?
+  onboardingStep Int     @default(0)
   preferences  Json?
+  privacy      Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -48,6 +98,10 @@ model CheckIn {
   id        String   @id @default(uuid())
   userId    String
   mood      Mood
+  intensity Int?
+  factors   String[] @default([])
+  emotions  String[] @default([])
+  influencers String[] @default([])
   notes     String?
   date      DateTime
   createdAt DateTime @default(now())
@@ -55,19 +109,23 @@ model CheckIn {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model Journal {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String
-  content   String
-  mood      Mood?
-  tags      String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  userId     String
+  title      String
+  content    String
+  mood       Mood?
+  tags       String[]
+  archivedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model RefreshToken {
@@ -77,6 +135,231 @@ model RefreshToken {
   createdAt DateTime @default(now())
   expiresAt DateTime
   revoked   Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  id        String           @id @default(uuid())
+  userId    String
+  type      VerificationType
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model WellnessGoal {
+  id        String @id @default(uuid())
+  userId    String @unique
+  goals     Json
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OnboardingAnswer {
+  id        String @id @default(uuid())
+  userId    String @unique
+  answers   Json
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DataExport {
+  id          String       @id @default(uuid())
+  userId      String
+  status      ExportStatus @default(PENDING)
+  payload     Json?
+  error       String?
+  requestedAt DateTime     @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model JournalPrompt {
+  id          String   @id @default(uuid())
+  text        String
+  category    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  completions CompletedPrompt[]
+}
+
+model CompletedPrompt {
+  id          String        @id @default(uuid())
+  userId      String
+  promptId    String
+  completedAt DateTime      @default(now())
+
+  prompt JournalPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promptId])
+}
+
+model WellnessTip {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  category  String?
+  tags      String[] @default([])
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  feedback TipFeedback[]
+}
+
+model TipFeedback {
+  id        String  @id @default(uuid())
+  tipId     String
+  userId    String
+  helpful   Boolean?
+  comment   String?
+  createdAt DateTime @default(now())
+
+  tip  WellnessTip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tipId, userId])
+}
+
+model Recommendation {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  category  String?
+  reason    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  saves SavedRecommendation[]
+}
+
+model SavedRecommendation {
+  id               String         @id @default(uuid())
+  userId           String
+  recommendationId String
+  createdAt        DateTime       @default(now())
+
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recommendationId])
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  userId      String
+  deviceToken String
+  platform    String
+  lastUsedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceToken])
+}
+
+model NotificationSetting {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  pushEnabled      Boolean  @default(true)
+  emailEnabled     Boolean  @default(true)
+  smsEnabled       Boolean  @default(false)
+  remindersEnabled Boolean  @default(true)
+  tipsEnabled      Boolean  @default(false)
+  quietHoursStart  Int?
+  quietHoursEnd    Int?
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id         String   @id @default(uuid())
+  userId     String
+  title      String
+  time       String
+  repeatDays Int[]    @default([])
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ConsentRecord {
+  id         String   @id @default(uuid())
+  userId     String
+  type       String
+  version    String
+  acceptedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  subject     String
+  description String
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String
+  category  String?
+  message   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BugReport {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String?
+  description String
+  steps       String?
+  environment String?
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
