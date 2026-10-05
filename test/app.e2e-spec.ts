@@ -20,6 +20,14 @@ const mockPrisma = {
       }
       return Promise.resolve(mockUsers.get(where.id) ?? null);
     }),
+    findFirst: jest.fn().mockImplementation(({ where }) => {
+      for (const user of mockUsers.values()) {
+        if (user.id === where.id && user.deletedAt === where.deletedAt) {
+          return Promise.resolve(user);
+        }
+      }
+      return Promise.resolve(null);
+    }),
     create: jest.fn().mockImplementation(({ data }) => {
       const id = `user-${userIdCounter++}`;
       const user = {
