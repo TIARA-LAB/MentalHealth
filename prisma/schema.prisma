@@ -79,6 +79,7 @@ model Profile {
   avatarUrl    String?
   age          Int?
   gender       String?
+  goals        String[]  @default([])
   streakCount  Int       @default(0)
   lastCheckInAt DateTime?
   journalStreakCount Int @default(0)

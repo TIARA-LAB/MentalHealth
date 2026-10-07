@@ -1,5 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
@@ -62,6 +64,18 @@ export class UpdateProfileSettingsDto {
   @IsOptional()
   @IsIn(GENDERS)
   gender?: (typeof GENDERS)[number];
+
+  @ApiPropertyOptional({
+    example: ['Meditate daily', 'Sleep 8 hours'],
+    description: 'Wellness goals',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  @ArrayMaxSize(10)
+  goals?: string[];
 
   @ApiPropertyOptional({
     example: true,

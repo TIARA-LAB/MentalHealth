@@ -28,6 +28,7 @@ export class ProfileService {
             avatarUrl: true,
             age: true,
             gender: true,
+            goals: true,
             streakCount: true,
             lastCheckInAt: true,
             journalStreakCount: true,
@@ -40,7 +41,6 @@ export class ProfileService {
             updatedAt: true,
           },
         },
-        wellnessGoal: { select: { goals: true } },
       },
     });
     if (!user) {
@@ -65,7 +65,7 @@ export class ProfileService {
         avatarUrl: user.profile?.avatarUrl ?? null,
         age: user.profile?.age ?? null,
         gender: user.profile?.gender ?? null,
-        goals: this.readGoals(user.wellnessGoal?.goals ?? null),
+        goals: user.profile?.goals ?? [],
         streakCount,
         lastCheckInAt: user.profile?.lastCheckInAt ?? null,
         dayStreak: user.profile?.journalStreakCount ?? 0,
@@ -132,6 +132,7 @@ export class ProfileService {
       ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
       ...(dto.age !== undefined && { age: dto.age }),
       ...(dto.gender !== undefined && { gender: dto.gender }),
+      ...(dto.goals !== undefined && { goals: dto.goals }),
       ...(dto.reminderEnabled !== undefined && {
         reminderEnabled: dto.reminderEnabled,
       }),
@@ -151,13 +152,6 @@ export class ProfileService {
     });
 
     return this.getProfile(userId);
-  }
-
-  private readGoals(goals: Prisma.JsonValue | null | undefined): string[] {
-    if (Array.isArray(goals)) {
-      return goals.filter((goal): goal is string => typeof goal === 'string');
-    }
-    return [];
   }
 
   private readPreferences(
